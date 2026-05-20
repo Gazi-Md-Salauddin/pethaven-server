@@ -47,8 +47,23 @@ async function run() {
       res.json(result);
     })
     
+    app.patch("/pet/:id", async (req, res) => {
+            const { id } = req.params;
+            const updateData = req.body;
+            const result = await petCollection.updateOne(
+                { _id: new ObjectId(id) },
+                { $set: updateData }
+            );
+            res.json(result);
+        });
     
-    
+    app.delete("/pet/:id", async (req, res) => {
+            const { id } = req.params;
+            const result = await petCollection.deleteOne({
+                _id: new ObjectId(id)
+            });
+            res.json(result);
+        });
     
     
     
