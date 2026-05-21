@@ -52,7 +52,8 @@ async function run() {
             const updateData = req.body;
             const result = await petCollection.updateOne(
                 { _id: new ObjectId(id) },
-                { $set: updateData }
+                { $set: updateData },
+                
             );
             res.json(result);
         });
@@ -68,7 +69,8 @@ async function run() {
         app.get("/request/:userId", async (req, res) => {
             const { userId } = req.params;
             const result = await requestCollection
-                .find({ userId: userId }).toArray();
+                .find({ userId: userId })
+                .toArray();
             console.log(userId);
             res.json(result);
         });
@@ -78,14 +80,28 @@ async function run() {
             const result = await requestCollection.insertOne(requestData);
             res.json(result);
         });
+
+        app.delete("/request/:userId", async (req, res) => {
+            const { userId } = req.params;
+            const result = await requestCollection.deleteOne({
+                _id: new ObjectId(userId)
+            });
+            res.json(result);
+        });
+        app.patch("/request/:id", async (req, res) => {
+            const { id } = req.params;
+            const { status } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো স্ট্যাটাস ("Approved" অথবা "Rejected")
+
+            const result = await requestCollection.updateOne(
+                { petId: id },
+
+                { $set: { status: status } }
+            );
+
+            res.json(result);
+        });
         
-        app.delete("/request/:userId", async(req, res) =>{
-          const {userId} = req.params;
-          const result = await requestCollection.deleteOne({
-            _id: new ObjectId(userId)
-          });
-          res.json(result);
-        })
+        
         
         
         
