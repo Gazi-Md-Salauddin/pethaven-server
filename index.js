@@ -78,6 +78,18 @@ async function run() {
             const result = await requestCollection.insertOne(requestData);
             res.json(result);
         });
+        
+        app.delete("/request/:userId", async(req, res) =>{
+          const {userId} = req.params;
+          const result = await requestCollection.deleteOne({
+            _id: new ObjectId(userId)
+          });
+          res.json(result);
+        })
+        
+        
+        
+        
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
