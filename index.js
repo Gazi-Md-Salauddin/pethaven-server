@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 dotenv.config();
 
 const uri = process.env.MONGODB_URI;
@@ -19,6 +20,32 @@ const client = new MongoClient(uri, {
         deprecationErrors: true
     }
 });
+
+const JWKS = createRemoteJWKSet(
+    new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
+);
+console.log(JWKS)
+
+const verifyToken = async (req, res, next) => {
+    const authHeader = req?.headers.authorization;
+    console.log(authHeader)
+    if (!authHeader) {
+        return res.status(401).json({ message: "Unauthorised" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorised" });
+    }
+    try {
+        const { payload } = await jwtVerify(token, JWKS);
+        console.log(payload);
+        next();
+    } catch (error) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+   
+    
+};
 
 async function run() {
     try {
@@ -39,7 +66,7 @@ async function run() {
             res.json(result);
         });
 
-        app.get("/pet/:id", async (req, res) => {
+        app.get("/pet/:id", verifyToken, async (req, res) => {
             const { id } = req.params;
             const result = await petCollection.findOne({
                 _id: new ObjectId(id)
@@ -52,8 +79,7 @@ async function run() {
             const updateData = req.body;
             const result = await petCollection.updateOne(
                 { _id: new ObjectId(id) },
-                { $set: updateData },
-                
+                { $set: updateData }
             );
             res.json(result);
         });
@@ -66,7 +92,7 @@ async function run() {
             res.json(result);
         });
 
-        app.get("/request/:userId", async (req, res) => {
+        app.get("/request/:userId", verifyToken, async (req, res) => {
             const { userId } = req.params;
             const result = await requestCollection
                 .find({ userId: userId })
@@ -90,7 +116,7 @@ async function run() {
         });
         app.patch("/request/:id", async (req, res) => {
             const { id } = req.params;
-            const { status } = req.body; // ফ্রন্টএন্ড থেকে পাঠানো স্ট্যাটাস ("Approved" অথবা "Rejected")
+            const { status } = req.body;
 
             const result = await requestCollection.updateOne(
                 { petId: id },
@@ -100,12 +126,6 @@ async function run() {
 
             res.json(result);
         });
-        
-        
-        
-        
-        
-        
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
