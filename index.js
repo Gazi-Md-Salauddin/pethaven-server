@@ -56,11 +56,21 @@ async function run() {
         const requestCollection = db.collection("requests");
 
         app.get("/pet", async (req, res) => {
-            const result = await petCollection.find().toArray();
+          const search = req.query.search || "";
+          
+          const query = {}
+    if(search) {
+        query.petName = {
+          $regex: search,
+          $options: "i",
+        };
+      }
+    console.log(query)
+            const result = await petCollection.find(query).toArray();
             res.json(result);
         });
 
-        app.post("/pet", async (req, res) => {
+        app.post("/pet", verifyToken, async (req, res) => {
             const petData = req.body;
             const result = await petCollection.insertOne(petData);
             res.json(result);
@@ -84,7 +94,7 @@ async function run() {
             res.json(result);
         });
 
-        app.delete("/pet/:id", async (req, res) => {
+        app.delete("/pet/:id", verifyToken, async (req, res) => {
             const { id } = req.params;
             const result = await petCollection.deleteOne({
                 _id: new ObjectId(id)
