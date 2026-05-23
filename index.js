@@ -38,7 +38,8 @@ const verifyToken = async (req, res, next) => {
     }
     try {
         const { payload } = await jwtVerify(token, JWKS);
-        console.log(payload);
+        req.user = payload;
+        
         next();
     } catch (error) {
         return res.status(403).json({ message: "Forbidden" });
@@ -55,7 +56,7 @@ async function run() {
         const petCollection = db.collection("pets");
         const requestCollection = db.collection("requests");
 
-        app.get("/pet", verifyToken, async (req, res) => {
+        app.get("/pet", async (req, res) => {
           const search = req.query.search || "";
           
           const query = {}
@@ -69,9 +70,20 @@ async function run() {
             const result = await petCollection.find(query).toArray();
             res.json(result);
         });
+        
+        app.get("/my-pets", verifyToken, async (req, res) => {
+         const email = req.user.email;
 
+          const result = await petCollection
+           .find({ email })
+            .toArray();
+
+           res.json(result);
+        });
+        
         app.post("/pet", verifyToken, async (req, res) => {
             const petData = req.body;
+            petData.email = req.user.email;
             const result = await petCollection.insertOne(petData);
             res.json(result);
         });
