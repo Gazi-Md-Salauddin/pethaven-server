@@ -55,7 +55,7 @@ async function run() {
         const petCollection = db.collection("pets");
         const requestCollection = db.collection("requests");
 
-        app.get("/pet", async (req, res) => {
+        app.get("/pet", verifyToken, async (req, res) => {
           const search = req.query.search || "";
           
           const query = {}
