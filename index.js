@@ -58,14 +58,19 @@ async function run() {
 
         app.get("/pet", async (req, res) => {
           const search = req.query.search || "";
+          const species = req.query.species || "";
           
-          const query = {}
+          let query = {}
     if(search) {
         query.petName = {
           $regex: search,
           $options: "i",
         };
       }
+      
+      if (species && species !== "r" && !species.includes("react-aria")) {
+  query.species = { $regex: species, $options: "i" };
+}
     console.log(query)
             const result = await petCollection.find(query).toArray();
             res.json(result);
@@ -93,6 +98,11 @@ async function run() {
             const result = await petCollection.findOne({
                 _id: new ObjectId(id)
             });
+            if (pet.adopted) {
+  return res.status(400).send({
+    message: "Pet already adopted",
+  });
+}
             res.json(result);
         });
 
